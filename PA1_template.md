@@ -1,22 +1,18 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
-```{r, message=FALSE, error=FALSE, warning=FALSE}
-# Load packages we are going to work with
+
+```r
+# Loading packages
 library(lubridate)      # Working with dates
 library(dplyr)          # Working with tables
 library(ggplot2)        # Working with plots
 
-# Set the working directory
+# Setting the working directory
 setwd("E:\\Dev\\R\\Coursera\\5 Reproducible Research\\RepData_PeerAssessment1\\")
 
-# Read the CSV into a variable
+# Reading the CSV into a variable
 activity_source <- read.csv(unz('activity.zip', 'activity.csv'), sep = ',', header = TRUE, stringsAsFactors = FALSE)
 
 # Read the source table into a new variable using dplyr
@@ -28,53 +24,100 @@ rm("activity_source")
 # Transform date to a date class
 activity_table <- mutate(activity_table, date = ymd(date))
 
-# Create an activity table not containing NA values for steps
+# Create activity tables not containing NA values for steps and a table which contains the NA values
 activity_no_na <- activity_table[!is.na(activity_table$steps),]
-
-# Create an activity table containing NA values for steps. We will correct them later.
 activity_na <- activity_table[is.na(activity_table$steps),]
-
 ```
 
 ## What is mean total number of steps taken per day?
-```{r, binwidth = 25}
-# Calculate the total number of steps per day
+
+```r
+# Mean and median total number of steps per day
 group_by_date_no_na <- group_by(select(activity_no_na, -interval), date)
 by_day_no_na <- summarize(group_by_date_no_na, total_steps = sum(steps))
+by_day_no_na
+```
 
-# Total number of steps per day
+```
+## Source: local data frame [53 x 2]
+## 
+##          date total_steps
+## 1  2012-10-02         126
+## 2  2012-10-03       11352
+## 3  2012-10-04       12116
+## 4  2012-10-05       13294
+## 5  2012-10-06       15420
+## 6  2012-10-07       11015
+## 7  2012-10-09       12811
+## 8  2012-10-10        9900
+## 9  2012-10-11       10304
+## 10 2012-10-12       17382
+## ..        ...         ...
+```
+
+```r
+# Total number of steps per day histogram
 qplot(total_steps, data = by_day_no_na, binwidth=2000)
+```
 
-# Mean of the total steps per day
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+
+```r
+#mean
 mean(by_day_no_na$total_steps)
+```
 
-# Median of the total steps per day
+```
+## [1] 10766.19
+```
+
+```r
+#median
 median(by_day_no_na$total_steps)
+```
 
+```
+## [1] 10765
 ```
 
 
 ## What is the average daily activity pattern?
-```{r}
-# Calculate the average amount of steps per interval across all dates
+
+```r
+# Mean and median total number of steps per day
 group_by_interval_no_na <- group_by(select(activity_no_na, -date), interval)
 by_interval_no_na <- summarize(group_by_interval_no_na, mean_steps = mean(steps))
-
 qplot(interval, mean_steps , data = by_interval_no_na, geom="line")
+```
 
-# The 5-minute interval with on average the most steps
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
+```r
+# The 5-minute interval with on average the most number of steps
 select(filter(by_interval_no_na, mean_steps==max(mean_steps)), mean_steps)
+```
 
+```
+## Source: local data frame [1 x 1]
+## 
+##   mean_steps
+## 1   206.1698
 ```
 
 
 ## Inputing missing values
-```{r}
+
+```r
 # The total number of NA values for steps in the intervals
 nrow(activity_na)
+```
 
-# Correct the NA values in a copy of the activity_na table 
-# using the mean of the corresponding interval from the by_interval_no_na table
+```
+## [1] 2304
+```
+
+```r
+# Correcting the NA values in a copy of the activity_na table using the mean of the corresponding interval
 activity_na_corrected <- activity_na
 
 for (i in 1:nrow(activity_na_corrected)) {
@@ -89,39 +132,46 @@ for (i in 1:nrow(activity_na_corrected)) {
         activity_na_corrected[i,]$steps <- mean_steps_found
 }
 
-# Recreate the complete dataset with all dates and all intervals 
+# Recreate the dataset with all dates and all intervals 
 # by concatenating activity_no_na with activity_na_corrected
 activity_new <- rbind(activity_na_corrected, activity_no_na)
 
-# Check of there are no more NA values in the steps field
+# Check of there are no more NA values for steps
 summary(activity_new$steps)
+```
 
-# Calculate the total number of steps per day
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00    0.00    0.00   37.38   27.00  806.00
+```
+
+```r
+# Mean and median total number of steps per day
 group_by_date_new <- group_by(activity_new, date)
 by_day_new <- summarize(group_by_date_new, total_steps = sum(steps))
 
-# Total number of steps per day
 qplot(total_steps, data = by_day_new, binwidth=2000)
-
-# Mean of the total steps per day
-mean(by_day_new$total_steps)
-
-# Median of the total steps per day
-median(by_day_new$total_steps)
-
 ```
 
-From the mean, median and histogram of the corrected dataset, we conclude that:
-* Correcting the NA values for steps with an average of steps from the corresponding interval, did not change the mean of total steps per day
-* The histogram of total steps per day only changed for the median of the total steps
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+
+```r
+#mean
+mean(by_day_new$total_steps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+#median
+median(by_day_new$total_steps)
+```
+
+```
+## [1] 10766.19
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{r}
-
-
-
-
-```
-
-
