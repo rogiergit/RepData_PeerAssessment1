@@ -7,12 +7,18 @@ output:
 
 
 ## Loading and preprocessing the data
-```{r, message=FALSE, error=FALSE, warning=FALSE}
+```{r, message=FALSE, error=FALSE, warning=FALSE, results="hide"}
 # Load packages we are going to work with
 library(lubridate)      # Working with dates
 library(dplyr)          # Working with tables
 library(ggplot2)        # Working with plots
 
+# Set the locale the english
+Sys.setlocale("LC_TIME", "English")
+```
+
+
+```{r}
 # Set the working directory
 setwd("E:\\Dev\\R\\Coursera\\5 Reproducible Research\\RepData_PeerAssessment1\\")
 
@@ -42,7 +48,7 @@ activity_na <- activity_table[is.na(activity_table$steps),]
 group_by_date_no_na <- group_by(select(activity_no_na, -interval), date)
 by_day_no_na <- summarize(group_by_date_no_na, total_steps = sum(steps))
 
-# Total number of steps per day
+# Histogram
 qplot(total_steps, data = by_day_no_na, binwidth=2000)
 
 # Mean of the total steps per day
@@ -60,10 +66,11 @@ median(by_day_no_na$total_steps)
 group_by_interval_no_na <- group_by(select(activity_no_na, -date), interval)
 by_interval_no_na <- summarize(group_by_interval_no_na, mean_steps = mean(steps))
 
+# Line plot
 qplot(interval, mean_steps , data = by_interval_no_na, geom="line")
 
 # The 5-minute interval with on average the most steps
-select(filter(by_interval_no_na, mean_steps==max(mean_steps)), mean_steps)
+filter(by_interval_no_na, mean_steps==max(mean_steps))
 
 ```
 
@@ -100,7 +107,7 @@ summary(activity_new$steps)
 group_by_date_new <- group_by(activity_new, date)
 by_day_new <- summarize(group_by_date_new, total_steps = sum(steps))
 
-# Total number of steps per day
+# Line plot the total number of steps per day
 qplot(total_steps, data = by_day_new, binwidth=2000)
 
 # Mean of the total steps per day
@@ -118,9 +125,15 @@ From the mean, median and histogram of the corrected dataset, we conclude that:
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
+# Create a weekday field based on the day of the week
+activity_new <- mutate(activity_new, weekday = ifelse(weekdays(date)=="Sunday" | weekdays(date)=="Sunday", "Weekend", "Weekday"))
 
+# Calculate the average steps per interval per weekday
+group_by_weekday_interval <- group_by(activity_new, weekday, interval)
+weekday_interval_mean <- summarize(group_by_weekday_interval, mean_steps = mean(steps))
 
-
+# Plot
+qplot(interval, mean_steps, facets = weekday ~ ., data = weekday_interval_mean, geom="line")
 
 ```
 

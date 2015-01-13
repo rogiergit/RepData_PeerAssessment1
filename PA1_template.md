@@ -4,15 +4,22 @@
 ## Loading and preprocessing the data
 
 ```r
-# Loading packages
+# Load packages we are going to work with
 library(lubridate)      # Working with dates
 library(dplyr)          # Working with tables
 library(ggplot2)        # Working with plots
 
-# Setting the working directory
+# Set the locale the english
+Sys.setlocale("LC_TIME", "English")
+```
+
+
+
+```r
+# Set the working directory
 setwd("E:\\Dev\\R\\Coursera\\5 Reproducible Research\\RepData_PeerAssessment1\\")
 
-# Reading the CSV into a variable
+# Read the CSV into a variable
 activity_source <- read.csv(unz('activity.zip', 'activity.csv'), sep = ',', header = TRUE, stringsAsFactors = FALSE)
 
 # Read the source table into a new variable using dplyr
@@ -24,46 +31,28 @@ rm("activity_source")
 # Transform date to a date class
 activity_table <- mutate(activity_table, date = ymd(date))
 
-# Create activity tables not containing NA values for steps and a table which contains the NA values
+# Create an activity table not containing NA values for steps
 activity_no_na <- activity_table[!is.na(activity_table$steps),]
+
+# Create an activity table containing NA values for steps. We will correct them later.
 activity_na <- activity_table[is.na(activity_table$steps),]
 ```
 
 ## What is mean total number of steps taken per day?
 
 ```r
-# Mean and median total number of steps per day
+# Calculate the total number of steps per day
 group_by_date_no_na <- group_by(select(activity_no_na, -interval), date)
 by_day_no_na <- summarize(group_by_date_no_na, total_steps = sum(steps))
-by_day_no_na
-```
 
-```
-## Source: local data frame [53 x 2]
-## 
-##          date total_steps
-## 1  2012-10-02         126
-## 2  2012-10-03       11352
-## 3  2012-10-04       12116
-## 4  2012-10-05       13294
-## 5  2012-10-06       15420
-## 6  2012-10-07       11015
-## 7  2012-10-09       12811
-## 8  2012-10-10        9900
-## 9  2012-10-11       10304
-## 10 2012-10-12       17382
-## ..        ...         ...
-```
-
-```r
-# Total number of steps per day histogram
+# Histogram
 qplot(total_steps, data = by_day_no_na, binwidth=2000)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
 
 ```r
-#mean
+# Mean of the total steps per day
 mean(by_day_no_na$total_steps)
 ```
 
@@ -72,7 +61,7 @@ mean(by_day_no_na$total_steps)
 ```
 
 ```r
-#median
+# Median of the total steps per day
 median(by_day_no_na$total_steps)
 ```
 
@@ -84,24 +73,26 @@ median(by_day_no_na$total_steps)
 ## What is the average daily activity pattern?
 
 ```r
-# Mean and median total number of steps per day
+# Calculate the average amount of steps per interval across all dates
 group_by_interval_no_na <- group_by(select(activity_no_na, -date), interval)
 by_interval_no_na <- summarize(group_by_interval_no_na, mean_steps = mean(steps))
+
+# Line plot
 qplot(interval, mean_steps , data = by_interval_no_na, geom="line")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
 ```r
-# The 5-minute interval with on average the most number of steps
-select(filter(by_interval_no_na, mean_steps==max(mean_steps)), mean_steps)
+# The 5-minute interval with on average the most steps
+filter(by_interval_no_na, mean_steps==max(mean_steps))
 ```
 
 ```
-## Source: local data frame [1 x 1]
+## Source: local data frame [1 x 2]
 ## 
-##   mean_steps
-## 1   206.1698
+##   interval mean_steps
+## 1      835   206.1698
 ```
 
 
@@ -117,7 +108,8 @@ nrow(activity_na)
 ```
 
 ```r
-# Correcting the NA values in a copy of the activity_na table using the mean of the corresponding interval
+# Correct the NA values in a copy of the activity_na table 
+# using the mean of the corresponding interval from the by_interval_no_na table
 activity_na_corrected <- activity_na
 
 for (i in 1:nrow(activity_na_corrected)) {
@@ -132,11 +124,11 @@ for (i in 1:nrow(activity_na_corrected)) {
         activity_na_corrected[i,]$steps <- mean_steps_found
 }
 
-# Recreate the dataset with all dates and all intervals 
+# Recreate the complete dataset with all dates and all intervals 
 # by concatenating activity_no_na with activity_na_corrected
 activity_new <- rbind(activity_na_corrected, activity_no_na)
 
-# Check of there are no more NA values for steps
+# Check of there are no more NA values in the steps field
 summary(activity_new$steps)
 ```
 
@@ -146,17 +138,18 @@ summary(activity_new$steps)
 ```
 
 ```r
-# Mean and median total number of steps per day
+# Calculate the total number of steps per day
 group_by_date_new <- group_by(activity_new, date)
 by_day_new <- summarize(group_by_date_new, total_steps = sum(steps))
 
+# Line plot the total number of steps per day
 qplot(total_steps, data = by_day_new, binwidth=2000)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
 
 ```r
-#mean
+# Mean of the total steps per day
 mean(by_day_new$total_steps)
 ```
 
@@ -165,7 +158,7 @@ mean(by_day_new$total_steps)
 ```
 
 ```r
-#median
+# Median of the total steps per day
 median(by_day_new$total_steps)
 ```
 
@@ -173,5 +166,25 @@ median(by_day_new$total_steps)
 ## [1] 10766.19
 ```
 
+From the mean, median and histogram of the corrected dataset, we conclude that:
+* Correcting the NA values for steps with an average of steps from the corresponding interval, did not change the mean of total steps per day
+* The histogram of total steps per day only changed for the median of the total steps
+
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```r
+# Create a weekday field based on the day of the week
+activity_new <- mutate(activity_new, weekday = ifelse(weekdays(date)=="Sunday" | weekdays(date)=="Sunday", "Weekend", "Weekday"))
+
+# Calculate the average steps per interval per weekday
+group_by_weekday_interval <- group_by(activity_new, weekday, interval)
+weekday_interval_mean <- summarize(group_by_weekday_interval, mean_steps = mean(steps))
+
+# Plot
+qplot(interval, mean_steps, facets = weekday ~ ., data = weekday_interval_mean, geom="line")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+
+
