@@ -84,6 +84,7 @@ nrow(activity_na)
 # using the mean of the corresponding interval from the by_interval_no_na table
 activity_na_corrected <- activity_na
 
+# Loop through all rows in the activity_na_corrected table
 for (i in 1:nrow(activity_na_corrected)) {
         
         # Get the interval from the row to be corrected
